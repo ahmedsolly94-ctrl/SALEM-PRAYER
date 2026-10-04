@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.hardware.*;
 import android.os.*;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.view.*;
 import android.widget.*;
@@ -22,19 +23,27 @@ public class MainActivity extends Activity implements SensorEventListener {
     int cream = Color.rgb(247,241,229);
     int dark = Color.rgb(23,51,46);
 
-    String[] names = {"الفجر","الشروق","الظهر","العصر","المغرب","العشاء"};
-    String[] times = {"--:--","--:--","--:--","--:--","--:--","--:--"};
+    String[] names = {
+        "الفجر","الشروق","الظهر","العصر","المغرب","العشاء"
+    };
+
+    String[] times = {
+        "--:--","--:--","--:--","--:--","--:--","--:--"
+    };
 
     CountDownTimer timer;
     SensorManager sm;
     Sensor rotation;
     TextView qiblaDegree, qiblaArrow;
-    float[] gravity, geomag;
 
     @Override
     public void onCreate(Bundle b) {
         super.onCreate(b);
-        TimeZone.setDefault(TimeZone.getTimeZone("Africa/Cairo"));
+
+        TimeZone.setDefault(
+            TimeZone.getTimeZone("Africa/Cairo")
+        );
+
         requestNotificationPermission();
         showHome();
         PrayerScheduler.scheduleToday(this);
@@ -42,11 +51,14 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     void requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED) {
+            checkSelfPermission(
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED) {
 
             requestPermissions(
-                new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                new String[]{
+                    Manifest.permission.POST_NOTIFICATIONS
+                },
                 40
             );
         }
@@ -54,8 +66,9 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     void loadTimes() {
         Calendar c = Calendar.getInstance();
+
         PrayerTimesCalculator.Times t =
-                PrayerTimesCalculator.calculate(c);
+            PrayerTimesCalculator.calculate(c);
 
         times = new String[]{
             t.fajr,
@@ -69,14 +82,19 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     int minutes(String s) {
         String[] p = s.split(":");
-        return Integer.parseInt(p[0]) * 60 +
-               Integer.parseInt(p[1]);
+
+        return Integer.parseInt(p[0]) * 60
+             + Integer.parseInt(p[1]);
     }
 
     int nextPrayerIndex() {
+
         int now =
-            Calendar.getInstance().get(Calendar.HOUR_OF_DAY) * 60 +
-            Calendar.getInstance().get(Calendar.MINUTE);
+            Calendar.getInstance()
+            .get(Calendar.HOUR_OF_DAY) * 60
+            +
+            Calendar.getInstance()
+            .get(Calendar.MINUTE);
 
         for (int i = 0; i < times.length; i++) {
             if (i != 1 && minutes(times[i]) > now)
@@ -95,17 +113,23 @@ public class MainActivity extends Activity implements SensorEventListener {
         if (timer != null)
             timer.cancel();
 
-        timer = new CountDownTimer(24 * 60 * 60 * 1000L, 1000) {
+        timer = new CountDownTimer(
+            24 * 60 * 60 * 1000L,
+            1000
+        ) {
 
             public void onTick(long x) {
 
-                Calendar now = Calendar.getInstance();
+                Calendar now =
+                    Calendar.getInstance();
 
                 int idx = nextPrayerIndex();
 
-                String[] a = times[idx].split(":");
+                String[] a =
+                    times[idx].split(":");
 
-                Calendar target = (Calendar) now.clone();
+                Calendar target =
+                    (Calendar) now.clone();
 
                 target.set(
                     Calendar.HOUR_OF_DAY,
@@ -121,10 +145,14 @@ public class MainActivity extends Activity implements SensorEventListener {
                 target.set(Calendar.MILLISECOND, 0);
 
                 if (target.before(now))
-                    target.add(Calendar.DAY_OF_MONTH, 1);
+                    target.add(
+                        Calendar.DAY_OF_MONTH,
+                        1
+                    );
 
                 long d =
-                    target.getTimeInMillis() -
+                    target.getTimeInMillis()
+                    -
                     now.getTimeInMillis();
 
                 out.setText(
@@ -145,9 +173,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         }.start();
     }
 
-    /*
-     * Arabic text fix
-     */
+    /* Arabic TextView */
     TextView tv(String s, float z, int c) {
 
         TextView t = new TextView(this);
@@ -158,18 +184,31 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         if (s.matches(".*[\\u0600-\\u06FF].*")) {
 
-            t.setTextDirection(View.TEXT_DIRECTION_RTL);
-            t.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            t.setTextLocale(
+                new Locale("ar", "EG")
+            );
+
+            t.setTextDirection(
+                View.TEXT_DIRECTION_RTL
+            );
+
+            t.setLayoutDirection(
+                View.LAYOUT_DIRECTION_RTL
+            );
 
             t.setTypeface(
-                android.graphics.Typeface.create(
+                Typeface.create(
                     "sans-serif",
-                    android.graphics.Typeface.NORMAL
+                    Typeface.NORMAL
                 )
             );
         }
 
-        t.setGravity(Gravity.CENTER_VERTICAL);
+        t.setGravity(
+            Gravity.RIGHT |
+            Gravity.CENTER_VERTICAL
+        );
+
         t.setPadding(18, 8, 18, 8);
 
         return t;
@@ -177,7 +216,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     GradientDrawable bg(int c, float r) {
 
-        GradientDrawable g = new GradientDrawable();
+        GradientDrawable g =
+            new GradientDrawable();
 
         g.setColor(c);
         g.setCornerRadius(r);
@@ -187,10 +227,17 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     LinearLayout row() {
 
-        LinearLayout l = new LinearLayout(this);
+        LinearLayout l =
+            new LinearLayout(this);
 
-        l.setOrientation(LinearLayout.HORIZONTAL);
-        l.setGravity(Gravity.CENTER_VERTICAL);
+        l.setOrientation(
+            LinearLayout.HORIZONTAL
+        );
+
+        l.setGravity(
+            Gravity.CENTER_VERTICAL
+        );
+
         l.setPadding(8, 3, 8, 3);
 
         return l;
@@ -198,15 +245,28 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     void base() {
 
-        root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
+        root =
+            new LinearLayout(this);
+
+        root.setOrientation(
+            LinearLayout.VERTICAL
+        );
+
         root.setBackgroundColor(cream);
 
-        content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(14, 10, 14, 8);
+        content =
+            new LinearLayout(this);
 
-        ScrollView scroll = new ScrollView(this);
+        content.setOrientation(
+            LinearLayout.VERTICAL
+        );
+
+        content.setPadding(
+            14, 10, 14, 8
+        );
+
+        ScrollView scroll =
+            new ScrollView(this);
 
         scroll.addView(content);
 
@@ -220,7 +280,10 @@ public class MainActivity extends Activity implements SensorEventListener {
         );
 
         LinearLayout nav = row();
-        nav.setBackgroundColor(Color.WHITE);
+
+        nav.setBackgroundColor(
+            Color.WHITE
+        );
 
         String[] n = {
             "الرئيسية",
@@ -232,9 +295,12 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         for (String x : n) {
 
-            TextView q = tv(x, 12, green);
+            TextView q =
+                tv(x, 12, green);
 
-            q.setGravity(Gravity.CENTER);
+            q.setGravity(
+                Gravity.CENTER
+            );
 
             nav.addView(
                 q,
@@ -246,19 +312,29 @@ public class MainActivity extends Activity implements SensorEventListener {
             );
 
             if (x.equals("الرئيسية"))
-                q.setOnClickListener(v -> showHome());
+                q.setOnClickListener(
+                    v -> showHome()
+                );
 
             if (x.equals("الأذكار"))
-                q.setOnClickListener(v -> showAzkar());
+                q.setOnClickListener(
+                    v -> showAzkar()
+                );
 
             if (x.equals("الأحاديث"))
-                q.setOnClickListener(v -> showHadith());
+                q.setOnClickListener(
+                    v -> showHadith()
+                );
 
             if (x.equals("القبلة"))
-                q.setOnClickListener(v -> showQibla());
+                q.setOnClickListener(
+                    v -> showQibla()
+                );
 
             if (x.equals("التسبيح"))
-                q.setOnClickListener(v -> showTasbeeh());
+                q.setOnClickListener(
+                    v -> showTasbeeh()
+                );
         }
 
         root.addView(nav);
@@ -270,554 +346,10 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         LinearLayout h = row();
 
-        TextView logo = tv(
-            "☪  " + title,
-            22,
-            gold
-        );
-
-        logo.setTypeface(null, 1);
-
-        h.addView(
-            logo,
-            new LinearLayout.LayoutParams(
-                0,
-                58,
-                1
-            )
-        );
-
-        content.addView(h);
-    }
-
-    void showHome() {
-
-        base();
-
-        loadTimes();
-
-        header("Salem Prayer");
-
-        TextView loc = tv(
-            "بنها، القليوبية، مصر  •  📍",
-            15,
-            dark
-        );
-
-        loc.setGravity(Gravity.CENTER);
-
-        content.addView(
-            loc,
-            new LinearLayout.LayoutParams(-1, 45)
-        );
-
-        String date =
-            new SimpleDateFormat(
-                "EEEE، d MMMM yyyy",
-                new Locale("ar", "EG")
-            ).format(new Date());
-
-        TextView dt = tv(
-            date,
-            13,
-            Color.DKGRAY
-        );
-
-        dt.setGravity(Gravity.CENTER);
-
-        content.addView(
-            dt,
-            new LinearLayout.LayoutParams(-1, 35)
-        );
-
-        LinearLayout card = new LinearLayout(this);
-
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setGravity(Gravity.CENTER);
-        card.setBackground(bg(green, 34));
-
-        TextView a = tv(
-            "الصلاة القادمة",
-            14,
-            Color.WHITE
-        );
-
-        a.setGravity(Gravity.CENTER);
-        card.addView(a);
-
-        TextView b = tv(
-            nextPrayerName(),
-            25,
-            gold
-        );
-
-        b.setGravity(Gravity.CENTER);
-        b.setTypeface(null, 1);
-        card.addView(b);
-
-        TextView c = tv(
-            "--:--:--",
-            28,
-            Color.WHITE
-        );
-
-        c.setGravity(Gravity.CENTER);
-
-        card.addView(c);
-
-        startCountdown(c);
-
-        content.addView(
-            card,
-            new LinearLayout.LayoutParams(-1, 125)
-        );
-
-        for (int i = 0; i < 6; i++) {
-
-            LinearLayout r = row();
-
-            r.setBackground(
-                bg(
-                    i == nextPrayerIndex()
-                        ? Color.rgb(226,239,229)
-                        : Color.WHITE,
-                    18
-                )
-            );
-
-            TextView icon = tv(
-                i == 0 ? "🌅" :
-                (i == 5 ? "🌙" : "☀"),
-                21,
-                dark
-            );
-
-            icon.setGravity(Gravity.CENTER);
-
-            r.addView(
-                icon,
-                new LinearLayout.LayoutParams(48, 54)
-            );
-
-            r.addView(
-                tv(names[i], 16, dark),
-                new LinearLayout.LayoutParams(0, 54, 1)
-            );
-
-            TextView tm = tv(
-                times[i],
-                16,
-                dark
-            );
-
-            tm.setGravity(Gravity.CENTER);
-
-            r.addView(
-                tm,
-                new LinearLayout.LayoutParams(85, 54)
-            );
-
-            LinearLayout.LayoutParams p =
-                new LinearLayout.LayoutParams(-1, 58);
-
-            p.setMargins(0, 3, 0, 3);
-
-            content.addView(r, p);
-        }
-    }
-
-    void showAzkar() {
-
-        base();
-
-        header("الأذكار");
-
-        addTile(
-            "☀  أذكار الصباح",
-            "أدعية وأذكار لبداية يومك",
-            () -> showDetail(
-                "أذكار الصباح",
-                new String[]{
-                    "أصبحنا وأصبح الملك لله، والحمد لله.",
-                    "اللهم بك أصبحنا وبك أمسينا، وبك نحيا وبك نموت وإليك النشور.",
-                    "رضيت بالله رباً، وبالإسلام ديناً، وبمحمد ﷺ نبياً."
-                }
-            )
-        );
-
-        addTile(
-            "☾  أذكار المساء",
-            "أدعية وأذكار لراحة قلبك",
-            () -> showDetail(
-                "أذكار المساء",
-                new String[]{
-                    "أمسينا وأمسى الملك لله، والحمد لله.",
-                    "اللهم إني أسألك خير هذه الليلة وخير ما فيها.",
-                    "حسبي الله لا إله إلا هو عليه توكلت وهو رب العرش العظيم."
-                }
-            )
-        );
-
-        addTile(
-            "🤲  أذكار بعد الصلاة",
-            "أذكار مأثورة بعد كل صلاة",
-            () -> showDetail(
-                "أذكار بعد الصلاة",
-                new String[]{
-                    "أستغفر الله، أستغفر الله، أستغفر الله.",
-                    "اللهم أنت السلام ومنك السلام تباركت يا ذا الجلال والإكرام.",
-                    "سبحان الله 33 مرة، الحمد لله 33 مرة، الله أكبر 34 مرة."
-                }
-            )
-        );
-    }
-
-    void addTile(
-        String title,
-        String sub,
-        final Runnable r
-    ) {
-
-        LinearLayout c = new LinearLayout(this);
-
-        c.setOrientation(LinearLayout.VERTICAL);
-        c.setPadding(20, 10, 20, 10);
-        c.setBackground(bg(green, 28));
-
-        TextView a = tv(
-            title,
-            19,
-            Color.WHITE
-        );
-
-        a.setTypeface(null, 1);
-
-        c.addView(a);
-
-        c.addView(
-            tv(sub, 13, Color.WHITE)
-        );
-
-        c.setOnClickListener(v -> r.run());
-
-        LinearLayout.LayoutParams p =
-            new LinearLayout.LayoutParams(-1, 86);
-
-        p.setMargins(0, 6, 0, 6);
-
-        content.addView(c, p);
-    }
-
-    void showDetail(
-        String title,
-        String[] items
-    ) {
-
-        base();
-
-        header(title);
-
-        for (String s : items) {
-
-            LinearLayout c = new LinearLayout(this);
-
-            c.setOrientation(LinearLayout.VERTICAL);
-            c.setPadding(16, 10, 16, 10);
-            c.setBackground(bg(Color.WHITE, 24));
-
-            TextView a = tv(
-                s,
-                17,
-                dark
-            );
-
-            a.setGravity(
-                Gravity.RIGHT |
-                Gravity.CENTER_VERTICAL
-            );
-
-            c.addView(
-                a,
-                new LinearLayout.LayoutParams(-1, 90)
-            );
-
-            LinearLayout.LayoutParams p =
-                new LinearLayout.LayoutParams(-1, 100);
-
-            p.setMargins(0, 6, 0, 6);
-
-            content.addView(c, p);
-        }
-    }
-
-    void showHadith() {
-
-        base();
-
-        header("الأحاديث");
-
-        String[] h = {
-            "إنما الأعمال بالنيات، وإنما لكل امرئ ما نوى.",
-            "من لا يَرحم لا يُرحم.",
-            "ما نقصت صدقة من مال.",
-            "أحب الأعمال إلى الله أدومها وإن قل.",
-            "الكلمة الطيبة صدقة."
-        };
-
-        for (String s : h) {
-
-            LinearLayout c = new LinearLayout(this);
-
-            c.setPadding(18, 12, 18, 12);
-            c.setGravity(Gravity.CENTER_VERTICAL);
-            c.setBackground(bg(Color.WHITE, 24));
-
-            TextView t = tv(
-                "★  " + s,
-                17,
-                dark
-            );
-
-            t.setGravity(
-                Gravity.RIGHT |
-                Gravity.CENTER_VERTICAL
-            );
-
-            c.addView(t);
-
-            LinearLayout.LayoutParams p =
-                new LinearLayout.LayoutParams(-1, 88);
-
-            p.setMargins(0, 5, 0, 5);
-
-            content.addView(c, p);
-        }
-    }
-
-    void showQibla() {
-
-        base();
-
-        header("القبلة");
-
-        double bearing =
-            qiblaBearing(30.466, 31.184);
-
-        TextView info = tv(
-            "اتجاه القبلة من بنها",
-            18,
-            dark
-        );
-
-        info.setGravity(Gravity.CENTER);
-
-        content.addView(
-            info,
-            new LinearLayout.LayoutParams(-1, 55)
-        );
-
-        qiblaDegree = tv(
-            String.format(Locale.US, "%.0f°", bearing),
-            34,
-            gold
-        );
-
-        qiblaDegree.setGravity(Gravity.CENTER);
-
-        content.addView(
-            qiblaDegree,
-            new LinearLayout.LayoutParams(-1, 65)
-        );
-
-        qiblaArrow = tv(
-            "🧭\n\n↗",
-            70,
-            green
-        );
-
-        qiblaArrow.setGravity(Gravity.CENTER);
-
-        content.addView(
-            qiblaArrow,
-            new LinearLayout.LayoutParams(-1, 230)
-        );
-
-        TextView note = tv(
-            "ضع الهاتف بشكل أفقي واسمح للتطبيق باستخدام حساس البوصلة.",
-            14,
-            Color.DKGRAY
-        );
-
-        note.setGravity(Gravity.CENTER);
-
-        content.addView(
-            note,
-            new LinearLayout.LayoutParams(-1, 60)
-        );
-
-        sm =
-            (SensorManager)
-            getSystemService(SENSOR_SERVICE);
-
-        rotation =
-            sm.getDefaultSensor(
-                Sensor.TYPE_ROTATION_VECTOR
-            );
-
-        if (rotation != null)
-            sm.registerListener(
-                this,
-                rotation,
-                SensorManager.SENSOR_DELAY_UI
-            );
-    }
-
-    double qiblaBearing(
-        double lat,
-        double lon
-    ) {
-
-        double lat1 = Math.toRadians(lat);
-        double lat2 = Math.toRadians(21.4225);
-        double dl = Math.toRadians(39.8262 - lon);
-
-        return (
-            Math.toDegrees(
-                Math.atan2(
-                    Math.sin(dl),
-                    Math.cos(lat1) * Math.tan(lat2)
-                    -
-                    Math.sin(lat1) * Math.cos(dl)
-                )
-            ) + 360
-        ) % 360;
-    }
-
-    void showTasbeeh() {
-
-        base();
-
-        header("السبحة الإلكترونية");
-
-        final TextView count =
-            tv("0", 60, gold);
-
-        count.setGravity(Gravity.CENTER);
-
-        content.addView(
-            count,
-            new LinearLayout.LayoutParams(-1, 130)
-        );
-
-        Button b = new Button(this);
-
-        b.setText("اضغط للتسبيح");
-        b.setTextSize(20);
-        b.setTextColor(Color.WHITE);
-        b.setBackground(bg(green, 35));
-
-        content.addView(
-            b,
-            new LinearLayout.LayoutParams(-1, 70)
-        );
-
-        Button reset = new Button(this);
-
-        reset.setText("تصفير");
-
-        content.addView(
-            reset,
-            new LinearLayout.LayoutParams(-1, 60)
-        );
-
-        final int[] n = {0};
-
-        b.setOnClickListener(v -> {
-            n[0]++;
-            count.setText(String.valueOf(n[0]));
-        });
-
-        reset.setOnClickListener(v -> {
-            n[0] = 0;
-            count.setText("0");
-        });
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent e) {
-
-        if (
-            e.sensor.getType() !=
-            Sensor.TYPE_ROTATION_VECTOR ||
-            qiblaArrow == null
-        )
-            return;
-
-        float[] rm = new float[9];
-
-        SensorManager.getRotationMatrixFromVector(
-            rm,
-            e.values
-        );
-
-        float[] orient = new float[3];
-
-        SensorManager.getOrientation(
-            rm,
-            orient
-        );
-
-        float az =
-            (float) Math.toDegrees(orient[0]);
-
-        az = (az + 360) % 360;
-
-        double qb =
-            qiblaBearing(30.466, 31.184);
-
-        float rel =
-            (float) qb - az;
-
-        qiblaArrow.setRotation(rel);
-
-        qiblaDegree.setText(
-            String.format(
-                Locale.US,
-                "القبلة %.0f°",
-                qb
-            )
-        );
-    }
-
-    @Override
-    public void onAccuracyChanged(
-        Sensor s,
-        int a
-    ) {
-    }
-
-    @Override
-    protected void onPause() {
-
-        super.onPause();
-
-        if (sm != null)
-            sm.unregisterListener(this);
-    }
-
-    @Override
-    protected void onResume() {
-
-        super.onResume();
-
-        if (
-            rotation != null &&
-            qiblaArrow != null
-        )
-            sm.registerListener(
-                this,
-                rotation,
-                SensorManager.SENSOR_DELAY_UI
-            );
-    }
-}
+        TextView logo =
+            tv(title, 22, gold);
+
+        logo.setTypeface(
+            Typeface.create(
+                "sans-serif",
+                Typeface.BOLD
