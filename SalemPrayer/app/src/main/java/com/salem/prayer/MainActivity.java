@@ -1,47 +1,63 @@
 package com.salem.prayer;
 
 import android.Manifest;
-import android.app.*;
-import android.content.*;
+import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.hardware.*;
-import android.os.*;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.view.*;
-import android.widget.*;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class MainActivity extends Activity implements SensorEventListener {
 
     LinearLayout root, content;
 
-    int green = Color.rgb(6,63,54);
-    int gold = Color.rgb(216,173,85);
-    int cream = Color.rgb(247,241,229);
-    int dark = Color.rgb(23,51,46);
+    int green = Color.rgb(6, 63, 54);
+    int gold = Color.rgb(216, 173, 85);
+    int cream = Color.rgb(247, 241, 229);
+    int dark = Color.rgb(23, 51, 46);
 
     String[] names = {
-        "الفجر","الشروق","الظهر","العصر","المغرب","العشاء"
+            "الفجر", "الشروق", "الظهر",
+            "العصر", "المغرب", "العشاء"
     };
 
     String[] times = {
-        "--:--","--:--","--:--","--:--","--:--","--:--"
+            "--:--", "--:--", "--:--",
+            "--:--", "--:--", "--:--"
     };
 
     CountDownTimer timer;
     SensorManager sm;
     Sensor rotation;
-    TextView qiblaDegree, qiblaArrow;
+
+    TextView qiblaDegree;
+    TextView qiblaArrow;
 
     @Override
     public void onCreate(Bundle b) {
         super.onCreate(b);
 
         TimeZone.setDefault(
-            TimeZone.getTimeZone("Africa/Cairo")
+                TimeZone.getTimeZone("Africa/Cairo")
         );
 
         requestNotificationPermission();
@@ -51,15 +67,15 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     void requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED) {
+                checkSelfPermission(
+                        Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED) {
 
             requestPermissions(
-                new String[]{
-                    Manifest.permission.POST_NOTIFICATIONS
-                },
-                40
+                    new String[]{
+                            Manifest.permission.POST_NOTIFICATIONS
+                    },
+                    40
             );
         }
     }
@@ -68,15 +84,15 @@ public class MainActivity extends Activity implements SensorEventListener {
         Calendar c = Calendar.getInstance();
 
         PrayerTimesCalculator.Times t =
-            PrayerTimesCalculator.calculate(c);
+                PrayerTimesCalculator.calculate(c);
 
         times = new String[]{
-            t.fajr,
-            t.sunrise,
-            t.dhuhr,
-            t.asr,
-            t.maghrib,
-            t.isha
+                t.fajr,
+                t.sunrise,
+                t.dhuhr,
+                t.asr,
+                t.maghrib,
+                t.isha
         };
     }
 
@@ -84,21 +100,24 @@ public class MainActivity extends Activity implements SensorEventListener {
         String[] p = s.split(":");
 
         return Integer.parseInt(p[0]) * 60
-             + Integer.parseInt(p[1]);
+                + Integer.parseInt(p[1]);
     }
 
     int nextPrayerIndex() {
 
-        int now =
-            Calendar.getInstance()
-            .get(Calendar.HOUR_OF_DAY) * 60
-            +
-            Calendar.getInstance()
-            .get(Calendar.MINUTE);
+        Calendar now =
+                Calendar.getInstance();
+
+        int current =
+                now.get(Calendar.HOUR_OF_DAY) * 60
+                        + now.get(Calendar.MINUTE);
 
         for (int i = 0; i < times.length; i++) {
-            if (i != 1 && minutes(times[i]) > now)
+
+            if (i != 1 &&
+                    minutes(times[i]) > current) {
                 return i;
+            }
         }
 
         return 0;
@@ -108,64 +127,68 @@ public class MainActivity extends Activity implements SensorEventListener {
         return names[nextPrayerIndex()];
     }
 
-    void startCountdown(TextView out) {
+    void startCountdown(final TextView out) {
 
-        if (timer != null)
+        if (timer != null) {
             timer.cancel();
+        }
 
         timer = new CountDownTimer(
-            24 * 60 * 60 * 1000L,
-            1000
+                24 * 60 * 60 * 1000L,
+                1000
         ) {
 
+            @Override
             public void onTick(long x) {
 
                 Calendar now =
-                    Calendar.getInstance();
+                        Calendar.getInstance();
 
-                int idx = nextPrayerIndex();
+                int index =
+                        nextPrayerIndex();
 
                 String[] a =
-                    times[idx].split(":");
+                        times[index].split(":");
 
                 Calendar target =
-                    (Calendar) now.clone();
+                        (Calendar) now.clone();
 
                 target.set(
-                    Calendar.HOUR_OF_DAY,
-                    Integer.parseInt(a[0])
+                        Calendar.HOUR_OF_DAY,
+                        Integer.parseInt(a[0])
                 );
 
                 target.set(
-                    Calendar.MINUTE,
-                    Integer.parseInt(a[1])
+                        Calendar.MINUTE,
+                        Integer.parseInt(a[1])
                 );
 
                 target.set(Calendar.SECOND, 0);
                 target.set(Calendar.MILLISECOND, 0);
 
-                if (target.before(now))
+                if (target.before(now)) {
                     target.add(
-                        Calendar.DAY_OF_MONTH,
-                        1
+                            Calendar.DAY_OF_MONTH,
+                            1
                     );
+                }
 
                 long d =
-                    target.getTimeInMillis()
-                    -
-                    now.getTimeInMillis();
+                        target.getTimeInMillis()
+                                - now.getTimeInMillis();
 
                 out.setText(
-                    String.format(
-                        Locale.US,
-                        "%02d:%02d:%02d",
-                        d / 3600000,
-                        (d / 60000) % 60,
-                        (d / 1000) % 60
-                    )
+                        String.format(
+                                Locale.US,
+                                "%02d:%02d:%02d",
+                                d / 3600000,
+                                (d / 60000) % 60,
+                                (d / 1000) % 60
+                        )
                 );
             }
 
+            @Override
             public void onFinish() {
                 startCountdown(out);
             }
@@ -173,54 +196,59 @@ public class MainActivity extends Activity implements SensorEventListener {
         }.start();
     }
 
-    /* Arabic TextView */
-    TextView tv(String s, float z, int c) {
+    /*
+     * TextView عربي بسيط
+     * بدون خلط Emoji مع النص العربي.
+     */
+    TextView tv(String text, float size, int color) {
 
-        TextView t = new TextView(this);
+        TextView t =
+                new TextView(this);
 
-        t.setText(s);
-        t.setTextSize(z);
-        t.setTextColor(c);
+        t.setText(text);
+        t.setTextSize(size);
+        t.setTextColor(color);
 
-        if (s.matches(".*[\\u0600-\\u06FF].*")) {
-
-            t.setTextLocale(
-                new Locale("ar", "EG")
-            );
+        if (text.matches(".*[\\u0600-\\u06FF].*")) {
 
             t.setTextDirection(
-                View.TEXT_DIRECTION_RTL
+                    View.TEXT_DIRECTION_RTL
             );
 
             t.setLayoutDirection(
-                View.LAYOUT_DIRECTION_RTL
+                    View.LAYOUT_DIRECTION_RTL
+            );
+
+            t.setGravity(
+                    Gravity.RIGHT |
+                            Gravity.CENTER_VERTICAL
             );
 
             t.setTypeface(
-                Typeface.create(
-                    "sans-serif",
-                    Typeface.NORMAL
-                )
+                    Typeface.DEFAULT
+            );
+
+        } else {
+
+            t.setGravity(
+                    Gravity.CENTER_VERTICAL
             );
         }
 
-        t.setGravity(
-            Gravity.RIGHT |
-            Gravity.CENTER_VERTICAL
+        t.setPadding(
+                18, 8, 18, 8
         );
-
-        t.setPadding(18, 8, 18, 8);
 
         return t;
     }
 
-    GradientDrawable bg(int c, float r) {
+    GradientDrawable bg(int color, float radius) {
 
         GradientDrawable g =
-            new GradientDrawable();
+                new GradientDrawable();
 
-        g.setColor(c);
-        g.setCornerRadius(r);
+        g.setColor(color);
+        g.setCornerRadius(radius);
 
         return g;
     }
@@ -228,17 +256,19 @@ public class MainActivity extends Activity implements SensorEventListener {
     LinearLayout row() {
 
         LinearLayout l =
-            new LinearLayout(this);
+                new LinearLayout(this);
 
         l.setOrientation(
-            LinearLayout.HORIZONTAL
+                LinearLayout.HORIZONTAL
         );
 
         l.setGravity(
-            Gravity.CENTER_VERTICAL
+                Gravity.CENTER_VERTICAL
         );
 
-        l.setPadding(8, 3, 8, 3);
+        l.setPadding(
+                8, 3, 8, 3
+        );
 
         return l;
     }
@@ -246,95 +276,107 @@ public class MainActivity extends Activity implements SensorEventListener {
     void base() {
 
         root =
-            new LinearLayout(this);
+                new LinearLayout(this);
 
         root.setOrientation(
-            LinearLayout.VERTICAL
+                LinearLayout.VERTICAL
         );
 
-        root.setBackgroundColor(cream);
+        root.setBackgroundColor(
+                cream
+        );
 
         content =
-            new LinearLayout(this);
+                new LinearLayout(this);
 
         content.setOrientation(
-            LinearLayout.VERTICAL
+                LinearLayout.VERTICAL
         );
 
         content.setPadding(
-            14, 10, 14, 8
+                14, 10, 14, 8
         );
 
         ScrollView scroll =
-            new ScrollView(this);
+                new ScrollView(this);
 
         scroll.addView(content);
 
         root.addView(
-            scroll,
-            new LinearLayout.LayoutParams(
-                -1,
-                0,
-                1
-            )
+                scroll,
+                new LinearLayout.LayoutParams(
+                        -1,
+                        0,
+                        1
+                )
         );
 
-        LinearLayout nav = row();
+        LinearLayout nav =
+                row();
 
         nav.setBackgroundColor(
-            Color.WHITE
+                Color.WHITE
         );
 
-        String[] n = {
-            "الرئيسية",
-            "الأذكار",
-            "الأحاديث",
-            "القبلة",
-            "التسبيح"
+        String[] navNames = {
+                "الرئيسية",
+                "الأذكار",
+                "الأحاديث",
+                "القبلة",
+                "التسبيح"
         };
 
-        for (String x : n) {
+        for (String name : navNames) {
 
             TextView q =
-                tv(x, 12, green);
+                    tv(
+                            name,
+                            12,
+                            green
+                    );
 
             q.setGravity(
-                Gravity.CENTER
+                    Gravity.CENTER
             );
 
             nav.addView(
-                q,
-                new LinearLayout.LayoutParams(
-                    0,
-                    64,
-                    1
-                )
+                    q,
+                    new LinearLayout.LayoutParams(
+                            0,
+                            64,
+                            1
+                    )
             );
 
-            if (x.equals("الرئيسية"))
+            if (name.equals("الرئيسية")) {
                 q.setOnClickListener(
-                    v -> showHome()
+                        v -> showHome()
                 );
+            }
 
-            if (x.equals("الأذكار"))
+            if (name.equals("الأذكار")) {
                 q.setOnClickListener(
-                    v -> showAzkar()
+                        v -> showAzkar()
                 );
+            }
 
-            if (x.equals("الأحاديث"))
+            if (name.equals("الأحاديث")) {
                 q.setOnClickListener(
-                    v -> showHadith()
+                        v -> showHadith()
                 );
+            }
 
-            if (x.equals("القبلة"))
+            if (name.equals("القبلة")) {
                 q.setOnClickListener(
-                    v -> showQibla()
+                        v -> showQibla()
                 );
+            }
 
-            if (x.equals("التسبيح"))
+            if (name.equals("التسبيح")) {
                 q.setOnClickListener(
-                    v -> showTasbeeh()
+                        v -> showTasbeeh()
                 );
+            }
         }
 
         root.addView(nav);
@@ -344,12 +386,49 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     void header(String title) {
 
-        LinearLayout h = row();
+        LinearLayout h =
+                row();
 
         TextView logo =
-            tv(title, 22, gold);
+                tv(
+                        title,
+                        22,
+                        gold
+                );
 
         logo.setTypeface(
-            Typeface.create(
-                "sans-serif",
-                Typeface.BOLD
+                Typeface.DEFAULT_BOLD
+        );
+
+        logo.setGravity(
+                Gravity.CENTER
+        );
+
+        h.addView(
+                logo,
+                new LinearLayout.LayoutParams(
+                        0,
+                        58,
+                        1
+                )
+        );
+
+        content.addView(h);
+    }
+
+    void showHome() {
+
+        base();
+        loadTimes();
+
+        header("Salem Prayer");
+
+        TextView loc =
+                tv(
+                        "بنها، القليوبية، مصر",
+                        15,
+                        dark
+                );
+
+        loc.setGravity(
+               
